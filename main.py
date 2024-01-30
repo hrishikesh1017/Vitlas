@@ -10,7 +10,7 @@ def create_sliding_windows(data, window_length, window_increment):
     pass
 
 # Step 3: Patterned Modified Early Warning Score (PMEWS)
-def calculate_mews(data)->int:
+def calculate_mews(data: pd.DataFrame) -> int:
     mews_score = 0
 
     # Extract vital signs from the data
