@@ -78,13 +78,41 @@ def calculate_mews(data: pd.DataFrame):
 
 # Step 4: Feature Calculation
 def calculate_features(pmews_array):
+    all_window_patterns = []
+    unique_patterns_in_window = {} 
+    for window in pmews_array:
+        calculate_mews(window)
+        window['pattern'] = window.apply(lambda row: ''.join(map(str, row[1:])), axis=1)
+        #window['trust'] = window['pattern'].apply(lambda x:((5-x.count('N'))/len(x))*100) 
+        for pattern in set(window['pattern']):
+            # trust calculation
+            unique_patterns_in_window[pattern]=[((len(pattern)-(pattern.count('N')))/len(pattern))*100]
+
+            # frequency calculation
+            unique_patterns_in_window[pattern].append(list(window['pattern']).count(pattern))
+
+            # trend calculation
+            current_patterns = window['pattern']
+            first_occurance = list(current_patterns).index(pattern)
+            last_occurance = len(current_patterns) - (list(current_patterns)[::-1]).index(pattern) - 1
+            unique_patterns_in_window[pattern].append(
+                    (last_occurance-first_occurance)/current_patterns.value_counts()[pattern])
+
+            #slope left
+        all_window_patterns.append(unique_patterns_in_window)
+    return all_window_patterns
+
+
+# Step 5: Visualization and Prioritized Alerts
+def visualize_results(all_window_patterns):
+    # Assuming all_window_patterns is a list of dictionaries where each dictionary represents a window
+    # and contains pattern frequencies and trust percentages.
+    
+    # Create a new figure for the plots
     pass
 
-    # Step 5: Visualization and Prioritized Alerts
-def visualize_results(order_of_conditions):
-    pass
 
-    # Step 6: Algorithm Implementation
+# Step 6: Algorithm Implementation
 class MonitoringAlgorithm:
     def __init__(self, data):
         self.data = data
@@ -92,7 +120,7 @@ class MonitoringAlgorithm:
     def run(self):
         pass
 
-        # Step 7: Testing and Validation
+# Step 7: Testing and Validation
 def test_implementation():
     pass
     # ...
@@ -100,30 +128,12 @@ def test_implementation():
 if __name__ == "__main__":
     raw_data = pd.read_csv("data.csv")
     preprocessed_data = preprocess_data(raw_data)
-
-    sliding_windows = create_sliding_windows(preprocessed_data, window_length=10, window_increment=5)
-
-    frequency_of_patterns = []
-    trend_of_patterns = []
-
-    for window in sliding_windows:
-        calculate_mews(window)
-        window['pattern'] = window.apply(lambda row: ''.join(map(str, row[1:])), axis=1)
-        window['trust'] = window['pattern'].apply(lambda x:((5-x.count('N'))/len(x))*100) 
-        frequency_of_patterns.append(window['pattern'].value_counts())
-        print(window)
-
-        current_patterns = window['pattern']
-        for pattern in set(current_patterns):
-            first_occurance = list(current_patterns).index(pattern)
-            last_occurance = len(current_patterns) - (list(current_patterns)[::-1]).index(pattern) - 1
-            
-            print(pattern)
-            print((last_occurance-first_occurance)/current_patterns.value_counts()[pattern])
-
-
-    """
+    pmews_array = create_sliding_windows(preprocessed_data, window_length=10, window_increment=5)
     features = calculate_features(pmews_array)
+
+    for feature in features:
+        print(feature)
+    """
     visualize_results(features)
     algorithm = MonitoringAlgorithm(features)
     algorithm.run()
