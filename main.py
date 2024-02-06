@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+pd.options.mode.copy_on_write = True 
 
 """
 Time,PR_Val,Temp_Val,Sys_Val,Resp_Val,SPO2
@@ -98,18 +99,28 @@ def test_implementation():
 
 if __name__ == "__main__":
     raw_data = pd.read_csv("data.csv")
-    print("preprocessing")
     preprocessed_data = preprocess_data(raw_data)
-    print("swinddow")
+
     sliding_windows = create_sliding_windows(preprocessed_data, window_length=10, window_increment=5)
+
+    frequency_of_patterns = []
+    trend_of_patterns = []
+
     for window in sliding_windows:
         calculate_mews(window)
         window['pattern'] = window.apply(lambda row: ''.join(map(str, row[1:])), axis=1)
         window['trust'] = window['pattern'].apply(lambda x:((5-x.count('N'))/len(x))*100) 
-        value_counts = window['pattern'].value_counts()    
-    
-    print(sliding_windows)
-    print(value_counts)
+        frequency_of_patterns.append(window['pattern'].value_counts())
+        print(window)
+
+        current_patterns = window['pattern']
+        for pattern in set(current_patterns):
+            first_occurance = list(current_patterns).index(pattern)
+            last_occurance = len(current_patterns) - (list(current_patterns)[::-1]).index(pattern) - 1
+            
+            print(pattern)
+            print((last_occurance-first_occurance)/current_patterns.value_counts()[pattern])
+
 
     """
     features = calculate_features(pmews_array)
