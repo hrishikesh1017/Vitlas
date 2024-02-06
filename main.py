@@ -105,8 +105,11 @@ if __name__ == "__main__":
     for window in sliding_windows:
         calculate_mews(window)
         window['pattern'] = window.apply(lambda row: ''.join(map(str, row[1:])), axis=1)
-        window['trust'] = window['pattern'].apply(lambda x:((5-x.count('N'))/len(x))*100)        
+        window['trust'] = window['pattern'].apply(lambda x:((5-x.count('N'))/len(x))*100) 
+        value_counts = window['pattern'].value_counts()    
+    
     print(sliding_windows)
+    print(value_counts)
 
     """
     features = calculate_features(pmews_array)
