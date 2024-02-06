@@ -1,49 +1,78 @@
 import pandas as pd
 import numpy as np
 
-# Step 1: Data Preprocessing
-def preprocess_data(raw_data):
-    pass
+"""
+Time,PR_Val,Temp_Val,Sys_Val,Resp_Val,SPO2
+1038,108,-,-,38,97
+1039,108,-,-,36,97
+1040,108,-,-,34,97
+1041,107,-,-,32,97
+1042,107,-,-,30,97
+"""
 
-    # Step 2: Sliding Window Transformation
-def create_sliding_windows(data, window_length, window_increment):
-    pass
+# Step 1: Data Preprocessing
+def preprocess_data(raw_data: pd.DataFrame) -> pd.DataFrame:
+    for i in raw_data.columns:
+        raw_data[i] = raw_data[i].replace('-', 'N')
+    return raw_data
+
+# Step 2: Sliding Window Transformation
+def create_sliding_windows(data: pd.DataFrame, window_length: int, window_increment:int):
+    print("hello")
+    sliding_windows = [];   
+    for i in range(0, len(data)-window_length, window_increment):
+        sliding_windows.append(data[i:i+window_length])
+    return sliding_windows
 
 # Step 3: Patterned Modified Early Warning Score (PMEWS)
-def calculate_mews(data: pd.DataFrame) -> int:
-    mews_score = 0
+def calculate_mews(data: pd.DataFrame):
+    def assign_mews_score_to_pulse_rate(pulse_rate):
+        # Define MEWS score ranges for Pulse Rate
+        if 51<= pulse_rate <= 100:
+            return 0  # Normal
+        elif 101 < pulse_rate <= 110:
+            return 1  # Mildly elevated
+        elif 41 < pulse_rate <= 50:
+            return 1  # Mildly elevated
+        elif 111 < pulse_rate <= 129:
+            return 2  # Elevated
+        elif  pulse_rate <= 40:
+            return 2  # Elevated
+        elif pulse_rate >= 130:
+            return 3  # High
+        else:
+            return 3  # Very high
 
-    # Extract vital signs from the data
-    heart_rate = data.get('heart_rate', 0)
-    respiratory_rate = data.get('respiratory_rate', 0)
-    systolic_bp = data.get('systolic_bp', 0)
-    temperature = data.get('temperature', 0)
+    def assign_mews_score_to_spo2(spo2):
+        # Define MEWS score ranges for Spo2
+        if 95 <= spo2 :
+            return 0  # Normal
+        elif 90 <= spo2 <=94:
+            return 1  # Mildly reduced
+        elif 86 <= spo2 <= 89:
+            return 2  # Moderately reduced
+        elif  spo2 <= 85:
+            return 3  # Severely reduced
+        else:
+            return 3  # Very severely reduced
 
-    if heart_rate >= 130 or heart_rate <= 39:
-        mews_score += 3
-    elif heart_rate >= 111 and heart_rate <= 129:
-        mews_score += 2
-    elif heart_rate >= 101 and heart_rate <= 110:
-        mews_score += 1
+    def assign_mews_score_to_respiratory_rate(respiratory_rate):
+        # Define MEWS score ranges for Respiratory Rate
+        if 9 <= respiratory_rate <= 14:
+            return 0  # Normal
+        elif 15 <= respiratory_rate <= 20:
+            return 1  # Mildly elevated
+        elif 21 <= respiratory_rate <= 29:
+            return 2  # Elevated
+        elif 30 <= respiratory_rate :
+            return 3  # High
+        else:
+            return 3  # Very high
 
-    if respiratory_rate >= 31 or respiratory_rate <= 8:
-        mews_score += 3
-    elif respiratory_rate >= 21 and respiratory_rate <= 30:
-        mews_score += 2
-    elif respiratory_rate >= 9 and respiratory_rate <= 20:
-        mews_score += 1
 
-    if systolic_bp <= 90:
-        mews_score += 3
-    elif systolic_bp >= 91 and systolic_bp <= 100:
-        mews_score += 2
-    elif systolic_bp >= 101 and systolic_bp <= 110:
-        mews_score += 1
-
-    if temperature >= 38.9 or temperature <= 35:
-        mews_score += 2
-
-    return mews_score
+    data["PR_Val"] = data["PR_Val"].apply(assign_mews_score_to_pulse_rate)
+    data["Resp_Val"] = data["Resp_Val"].apply(assign_mews_score_to_respiratory_rate)
+    data["SPO2"] = data["SPO2"].apply(assign_mews_score_to_spo2)
 
 
 # Step 4: Feature Calculation
@@ -68,13 +97,21 @@ def test_implementation():
     # ...
 
 if __name__ == "__main__":
-    raw_data = pd.read_csv("path/to/your/data.csv")
+    raw_data = pd.read_csv("data.csv")
+    print("preprocessing")
     preprocessed_data = preprocess_data(raw_data)
-    sliding_windows = create_sliding_windows(preprocessed_data, window_length=100, window_increment=10)
-    pmews_array = calculate_mews(sliding_windows)
+    print("swinddow")
+    sliding_windows = create_sliding_windows(preprocessed_data, window_length=10, window_increment=5)
+    for window in sliding_windows:
+        calculate_mews(window)
+        window['pattern'] = window.apply(lambda row: ''.join(map(str, row[1:])), axis=1)
+    print(sliding_windows)
+
+    """
     features = calculate_features(pmews_array)
     visualize_results(features)
     algorithm = MonitoringAlgorithm(features)
     algorithm.run()
     test_implementation()
+    """
 
