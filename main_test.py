@@ -76,31 +76,53 @@ def calculate_mews(data: pd.DataFrame):
     data["SPO2"] = data["SPO2"].apply(assign_mews_score_to_spo2)
 
 
+
 # Step 4: Feature Calculation
 def calculate_features(pmews_array):
     all_window_patterns = []
-    unique_patterns_in_window = {} 
     for window in pmews_array:
         calculate_mews(window)
         window['pattern'] = window.apply(lambda row: ''.join(map(str, row[1:])), axis=1)
-        #window['trust'] = window['pattern'].apply(lambda x:((5-x.count('N'))/len(x))*100) 
-        for pattern in set(window['pattern']):
-            # trust calculation
-            unique_patterns_in_window[pattern]=[((len(pattern)-(pattern.count('N')))/len(pattern))*100]
+        
+        unique_patterns_in_window = {} 
+        all_patterns = set(window['pattern']) - {'N'}  # Exclude missing values ('N')
+        for pattern in all_patterns:
+            pattern_data = window[window['pattern'] == pattern]
+            m = len(pattern_data)
 
-            # frequency calculation
-            unique_patterns_in_window[pattern].append(list(window['pattern']).count(pattern))
+            if m >= 1:  # Ensure there are at least 2 data points to calculate slope
+                # Timeslots
+                x_i = np.arange(m)
+                # Frequency counter for the pattern
+                frequency = len(pattern_data)
 
-            # trend calculation
-            current_patterns = window['pattern']
-            first_occurance = list(current_patterns).index(pattern)
-            last_occurance = len(current_patterns) - (list(current_patterns)[::-1]).index(pattern) - 1
-            unique_patterns_in_window[pattern].append(
-                    (last_occurance-first_occurance)/current_patterns.value_counts()[pattern])
+                # Mean of timeslots
+                x_bar = np.mean(x_i)
 
-            #slope left
+                # Calculate the numerator and denominator for the slope (beta)
+                numerator = np.sum((x_i - x_bar) * (frequency - np.mean(frequency)))
+                denominator = np.sum((x_i - x_bar) ** 2)
+
+                # Calculate beta (slope)
+                beta = numerator / denominator if denominator != 0 else 0
+
+                # Calculate trust
+                trust = ((len(pattern) - pattern.count('N')) / len(pattern)) * 100
+
+                # Calculate trend
+                current_patterns = window['pattern']
+                first_occurrence = list(current_patterns).index(pattern)
+                last_occurrence = len(current_patterns) - (list(current_patterns)[::-1]).index(pattern) - 1
+                trend = (last_occurrence - first_occurrence) / len(current_patterns)
+
+                unique_patterns_in_window[pattern] = [trust, frequency, trend, beta]
+
         all_window_patterns.append(unique_patterns_in_window)
+
     return all_window_patterns
+
+
+
 
 
 # Step 5: Visualization and Prioritized Alerts
@@ -130,7 +152,7 @@ if __name__ == "__main__":
     preprocessed_data = preprocess_data(raw_data)
     pmews_array = create_sliding_windows(preprocessed_data, window_length=10, window_increment=5)
     features = calculate_features(pmews_array)
-    
+    print(pmews_array)
 
     for feature in features:
         print(feature)
