@@ -91,20 +91,26 @@ def calculate_features(pmews_array):
             m = len(pattern_data)
 
             if m >= 1:  # Ensure there are at least 2 data points to calculate slope
-                # Timeslots
-                x_i = np.arange(m)
+                
+                time_intervals = np.array_split(window['Time'], 2)
+                pattern_frequencies = []
+                for interval in time_intervals:
+                    
+                    #print (max(interval))
+                    pattern_frequencies.append(pattern_data[pattern_data['Time'].isin(interval)].shape[0])
+
+                # Calculate slope
+                x = [max(interval) for interval in time_intervals]
+                y = pattern_frequencies
+                x_mean = np.mean(x)
+                y_mean = np.mean(y)
+                numerator = np.sum((x - x_mean) * (y - y_mean))
+                denominator = np.sum((x - x_mean) ** 2)
+                slope = numerator / denominator if denominator != 0 else 0    
+
                 # Frequency counter for the pattern
                 frequency = len(pattern_data)
 
-                # Mean of timeslots
-                x_bar = np.mean(x_i)
-
-                # Calculate the numerator and denominator for the slope (beta)
-                numerator = np.sum((x_i - x_bar) * (frequency - np.mean(frequency)))
-                denominator = np.sum((x_i - x_bar) ** 2)
-
-                # Calculate beta (slope)
-                beta = numerator / denominator if denominator != 0 else 0
 
                 # Calculate trust
                 trust = ((len(pattern) - pattern.count('N')) / len(pattern)) * 100
@@ -116,14 +122,45 @@ def calculate_features(pmews_array):
                 last_occurrence = pattern_data.index[-1]
                 trend = (current_times[last_occurrence] - current_times[first_occurrence]) / frequency
 
-                unique_patterns_in_window[pattern] = [trust, frequency, trend, beta]
+                unique_patterns_in_window[pattern] = [trust, frequency, trend,slope]
 
         all_window_patterns.append(unique_patterns_in_window)
 
     return all_window_patterns 
 
 
+# Step 5: Prioritization of Patterns
+def prioritize_patterns(all_window_patterns):
+    prioritized_patterns = []
+    for window_patterns in all_window_patterns:
+        patterns_with_priority = {}
+        patterns = list(window_patterns.keys())
 
+        # Calculate mean trust, trend, and frequency
+        mean_trust = np.mean([window_patterns[p][0] for p in patterns])
+        mean_trend = np.mean([window_patterns[p][2] for p in patterns])
+        mean_frequency = np.mean([window_patterns[p][1] for p in patterns])
+
+        for pattern, values in window_patterns.items():
+            mews_score = sum(int(char) if char != 'N' else 0 for char in pattern)
+            if mews_score >= 4:
+                rank = 0
+                trust, frequency, trend, slope = values
+
+                if trust >= mean_trust:
+                    rank += 1
+                if trend >= mean_trend:
+                    rank += 1
+                if frequency >= mean_frequency:
+                    rank += 1
+                if slope >= 0:
+                    rank += 1
+
+                patterns_with_priority[pattern] = rank
+
+        prioritized_patterns.append(patterns_with_priority)
+
+    return prioritized_patterns
 
 
 # Step 5: Visualization and Prioritized Alerts
@@ -153,10 +190,14 @@ if __name__ == "__main__":
     preprocessed_data = preprocess_data(raw_data)
     pmews_array = create_sliding_windows(preprocessed_data, window_length=10, window_increment=5)
     features = calculate_features(pmews_array)
+    priorities = prioritize_patterns(features)
 
 
     for feature in features:
         print(feature)
+        
+    for i, window in enumerate(priorities):
+        print(f"Window {i+1}: {window}")    
     """
     visualize_results(features)
     algorithm = MonitoringAlgorithm(features)

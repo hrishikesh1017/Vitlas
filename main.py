@@ -95,6 +95,7 @@ def calculate_features(pmews_array):
             current_patterns = window['pattern']
             first_occurance = list(current_patterns).index(pattern)
             last_occurance = len(current_patterns) - (list(current_patterns)[::-1]).index(pattern) - 1
+            
             unique_patterns_in_window[pattern].append(
                     (last_occurance-first_occurance)/current_patterns.value_counts()[pattern])
 
