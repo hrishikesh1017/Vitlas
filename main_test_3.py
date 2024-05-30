@@ -190,6 +190,9 @@ def visualize_results(prioritized_patterns):
         Line2D([0], [0], marker='o', color='w', label='Rank 4 (Red)', markersize=10, markerfacecolor='red')
     ]
 
+    pattern_explanation = "Pattern Code Explanation:\n1st: Pulse Rate, 2nd: Temperature, 3rd: Systolic BP, 4th: Respiratory Rate, 5th: SPO2"
+    fig.text(0.4, 0.03, pattern_explanation, ha='left', va='bottom', fontsize=12, bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
+    
     fig.legend(handles=legend_elements, loc='upper right')
     plt.show()
 
