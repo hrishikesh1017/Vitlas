@@ -144,7 +144,7 @@ def prioritize_patterns(all_window_patterns):
                 if slope >= 0:
                     count += 1
 
-                patterns_with_priority[pattern] = 5 - count  # Instead of rank it is count, when count is 4, rank is 1 and so on
+                patterns_with_priority[pattern] = count  # Instead of rank it is count, when count is 4, rank is 1 and so on
 
         prioritized_patterns.append(patterns_with_priority)
 
