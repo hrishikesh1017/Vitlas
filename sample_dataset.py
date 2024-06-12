@@ -228,7 +228,7 @@ class MonitoringAlgorithm:
 # Step 7: Testing and Validation
 def test_implementation():
 
-    preprocessed_data = pd.read_csv("test_datasheet3.csv")
+    preprocessed_data = pd.read_csv("data_formatted_1.csv")
     pmews_array = create_sliding_windows(preprocessed_data, window_length=preprocessed_data.shape[0]-1  )
     features = calculate_features(pmews_array)
     priorities = prioritize_patterns(features)
